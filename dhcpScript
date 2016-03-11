@@ -1,0 +1,93 @@
+#! /usr/bin/env python
+import re
+from subprocess import Popen, PIPE
+
+#class contianer for client data
+
+class ClientInfo:
+	
+	def __init__(self,line):
+		self.line = line
+		self.MAC_Address = ''
+		self.Ip_Address = ''
+		self.Interface = ''
+		self.HostDescription = ''
+		self.InterfaceImgPath = 'img/ConnectionType/error.jpg'
+		self.KnownHostsDictionary = {'80:19:34:9e:29:f6':'Dell_Laptop', '84:a4:66:fc:d9:a8':'Samsung_Tv', 'e4:e4:09:01:a6:18':'Soehnle_Receiver'}
+		self.PhpElement =  '<div class=\"col-xs-6 col-sm-3 col-md-3\"><div class=\"wow bounceInUp\" data-wow-delay=\"0.2s\"><div class=\"team boxed-grey\"><div class=\"inner\"><h5>HOST_NAME</h5><p class=\"subtitle\">IP_ADDRESS</p><p class=\"subtitle\">MAC_ADDRESS</p><div class=\"avatar\"><img src=\"img/ConnectionType/error.jpg\" alt=\"\" class=\"img-responsive img-circle\" /></div></div></div></div></div>'
+		ClientInfo.getMacAddress(self)
+		ClientInfo.getIpAddress(self)
+		ClientInfo.getHostName(self)
+		ClientInfo.readInterface(self)
+		ClientInfo.getImgName(self)
+		
+	# function for parsing host names
+	def getHostName(self):
+		starIndex = [m.start() for m in re.finditer('\*',self.line)]
+		if len(starIndex) > 0:
+			self.HostDescription ='noName'
+		else:
+			spaces = [m.start() for m in re.finditer(' ',self.line)]
+			self.HostDescription = self.line[spaces[2] + 1 : spaces[3]]
+		for mac,desc in self.KnownHostsDictionary.iteritems():
+			if (self.MAC_Address == mac):
+				self.HostDescription = self.HostDescription + ' [' + desc + ']'
+
+	# function for parsing mac addresses from leases
+	def getMacAddress(self):
+		firstSpaceIndex = self.line.index(' ') + 1
+		self.MAC_Address = self.line[firstSpaceIndex :(firstSpaceIndex + 17)]
+
+	# function for parsing ip addresses from leases
+	def getIpAddress(self):
+		spaces = [m.start() for m in re.finditer(' ',self.line)]
+		self.Ip_Address = self.line[spaces[1] + 1 : spaces[2]]
+
+	def readInterface(self):
+		proc = Popen(['arp', self.Ip_Address], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+		arpOutput,err=proc.communicate()
+		wlanIndex = [m.start() for m in re.finditer('wlan0',arpOutput)]
+		ethIndex = [m.start() for m in re.finditer('eth0',arpOutput)]
+		if len(wlanIndex) > 0:
+			self.Interface ='wlan0'
+		elif len(ethIndex) > 0:
+			self.Interface ='eth0'
+		else:
+			self.Interface ='error'
+
+	def getImgName(self):
+		if	self.Interface == 'wlan0':
+			self.InterfaceImgPath = 'img/ConnectionType/wifi.jpg'
+		elif self.Interface == 'eth0':
+			self.InterfaceImgPath = 'img/ConnectionType/ethernet.jpg'
+
+	def getPhpElement(self):
+		self.PhpElement = re.sub(r'HOST_NAME', self.HostDescription, self.PhpElement)
+		self.PhpElement = re.sub(r'IP_ADDRESS', self.Ip_Address, self.PhpElement)
+		self.PhpElement = re.sub(r'MAC_ADDRESS', self.MAC_Address, self.PhpElement)
+		self.PhpElement = re.sub(r'img\/ConnectionType\/error\.jpg',self.InterfaceImgPath, self.PhpElement)
+		return self.PhpElement
+
+		
+	def printInfo(self):
+		print "Host: " + self.HostDescription + ", MAC: " + self.MAC_Address + ", Ip: " + self.Ip_Address + ", Interface: " + self.Interface
+
+
+# open input/output files
+dhcpLeasesfile = open('/var/lib/misc/dnsmasq.leases')
+
+# Initialising a list for ClientInfo objects
+#ClientInfos = list()
+phpElements = ''
+
+# reads to whole dhcp Leases file
+leases_text = dhcpLeasesfile.readlines() 
+
+#main parsing loop
+for line in leases_text:
+	phpElements = phpElements + ClientInfo(line).getPhpElement()
+
+
+#stop processing, close leases file
+print(phpElements)
+dhcpLeasesfile.close()

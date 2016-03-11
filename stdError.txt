@@ -1,0 +1,3 @@
+/home/pi/SMB_PUB/Music/3_DaftPunk/PlayStuff.bash: 5: /home/pi/SMB_PUB/Music/3_DaftPunk/PlayStuff.bash: Bad substitution
+/usr/bin/omxplayer: line 67: 11433 Aborted                 LD_LIBRARY_PATH="$OMXPLAYER_LIBS${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" $OMXPLAYER_BIN "$@"
+/usr/bin/omxplayer: line 67: 11451 Terminated              LD_LIBRARY_PATH="$OMXPLAYER_LIBS${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" $OMXPLAYER_BIN "$@"
