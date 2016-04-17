@@ -20,7 +20,7 @@
 	<link href="color/default.css" rel="stylesheet">
 
 	<!-- media control icons -->
-	<link rel="stylesheet" href="css/mediaControlStyle.css">
+	<link rel="stylesheet" href="css/mediaControlStyle2.css">
 	<link rel="stylesheet" href="css/icono.css">
 	
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
@@ -52,7 +52,7 @@
                 <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-main-collapse">
                     <i class="fa fa-bars"></i>
                 </button>
-                <a class="navbar-brand" href="index.html">
+                <a class="navbar-brand" href="#">
                     <h1>RASPI ROUTER</h1>
                 </a>
             </div>
@@ -207,6 +207,29 @@
 					<i class="icono-next"></i>
 					<div class="about"><button type="submit" name="NextSong" onClick="musicControlClicked(this.name)" class="btnActions">Next Song</button></div>
 				</label><br /><br />
+				<div class="mediaControlsInnerBorder" id="mediaControlsInnerBorderId">
+				</div>
+				<div class="DisplayPlaylistInfo" id="DisplayPlaylistInfoId">
+					<div class="DisplayPlaylistInfoText" id="DisplayPlaylistInfoTextId">
+					Show playlist details
+					</div>
+					<div class="DisplayPlaylistInfoButtons" id="DisplayPlaylistInfoButtonsId">
+						<input type="radio" name="iconDisplayPlaylist" id="caretDownSquare"><!--
+					 --><label class="demo new" id="DisplayPlaylistLabel">
+							<i class="icono-caretDownSquare"></i>
+							<div class="about"><button type="submit" name="DisplayPlaylist" onClick="playlistControlClicked(this.name)" class="btnActions">DisplayPlaylist</button></div>
+						</label>
+						<input type="radio" name="iconHidePlaylist" id="caretUpSquare"><!--
+					 --><label class="demo new" id="HidePlaylistLabel">
+							<i class="icono-caretUpSquare"></i>
+							<div class="about"><button type="submit" name="HidePlaylist" onClick="playlistControlClicked(this.name)" class="btnActions">HidePlaylist</button></div>
+						</label>
+					</div>
+				</div>
+				<div class="trackNames" id="trackNamesId">
+					<div class="trackNamesInnerBorder" id="trackNamesInnerBorderId">
+					</div>
+				</div>
 			</div>
 		</div>
 	</section>
@@ -407,20 +430,78 @@
 				complete: function() {/*schedule the next request*/ setTimeout(worker,1000);}
 			 });
 		})();
+
 		function playlistClicked(clicked_name)
 		{
-			$.post("/ajax/proccessPostRequests.php",{ "playlistEvent": clicked_name });
+			 $.ajax({
+				type: "POST",
+				url: "/ajax/proccessPostRequests.php",
+				data: {"playlistEvent": clicked_name},
+				success: function() {},
+				complete: function() 
+				{
+					if(isPlaylistCurrentlyDisplayed() === true)
+					{
+						setTimeout(GetPlaylistFileNames,500);
+					}
+				}
+			 });
 		}
 		
 		function musicControlClicked(clicked_name)
 		{
 			$.post("/ajax/proccessPostRequests.php",{ "musicControlEvent": clicked_name });
 		}
+		
+		function playlistControlClicked(sClickedButton)
+		{
+			if((sClickedButton === "DisplayPlaylist") && (inactivityCounter === 0))
+			{
+				GetPlaylistFileNames();
+			}
+			else
+			{
+				hidePlaylistDetails();
+			}
+		}
+		function trackNameClicked(trackName)
+		{
+			$.post("/ajax/proccessPostRequests.php",{ "trackChangeEvent": trackName });
+		}
+		
+		function GetPlaylistFileNames()
+		{
+			$.ajax({
+			type: "POST",
+			url: "/ajax/proccessPostRequests.php",
+			data: {getVarStatusEvent: "Playlist"},
+			success: function(data) 
+			{
+				handlePlayslistFileNames(data);
+			}
+			});
+		}
 		/* ---------------------------------------------------------------------------------------- */
 		/* ---------------------- Java Script handling post responses form server ----------------- */
+		
+		var inactivityCounter = 0;
 		function handleRawStatus(rawStatus)
 		{
 			var dataArray = rawStatus.split(";");
+			
+			// this is to avoid unwanted control changes during player state change
+			if(dataArray[2] === "INACTIVE")
+			{
+				if( inactivityCounter < 10)
+				{
+					++inactivityCounter;
+				}
+			}
+			else
+			{
+				inactivityCounter = 0;
+			}
+			
 			processGetValueResponse(dataArray[0],'repeatLabel');
 			processGetValueResponse(dataArray[1],'shuffleLabel');
 			var pauseStatus = (dataArray[2] == 'PAUSED') ? 1 : 0;
@@ -430,7 +511,20 @@
 			
 			var splitTrackPath = dataArray[4].split("/");
 			var lastIndex= splitTrackPath.length - 1;
-			document.getElementById('TrackInfo').innerHTML = splitTrackPath[lastIndex];
+			var sTrackName = splitTrackPath[lastIndex].substring(0, splitTrackPath[lastIndex].length - 1);
+			document.getElementById('TrackInfo').innerHTML =sTrackName;
+			
+			if(isPlaylistCurrentlyDisplayed() === true)
+			{
+				if(dataArray[2] !== "INACTIVE")
+				{
+					markTrackInPlaylist(sTrackName);
+				}
+				else if(inactivityCounter > 1)
+				{
+					hidePlaylistDetails();
+				}
+			}
 		}
 		
 		function processGetValueResponse(response,valueId)
@@ -448,13 +542,28 @@
 		function handlePlayslistIds(sPlaylistIds)
 		{
 			console.log(sPlaylistIds);
-			//document.getElementById("MediaControlsId").innerHTML += "blabla";
-			var saPlaylistIds = sPlaylistIds.split(";");
-			var lastIndex= saPlaylistIds.length - 1;
+			var saPlaylistIds = sPlaylistIds.split(";")
 			
 			for(var i=0; i < (saPlaylistIds.length - 1); ++i)
 			{
 				generatePlaylistButton(saPlaylistIds[i]);
+			}
+		}
+		
+		function handlePlayslistFileNames(sTrackNames)
+		{
+			var sTrackNamesPaths = sTrackNames.split("\n");
+			var sTrackNamesDiv = document.getElementById("trackNamesInnerBorderId");
+			$('#trackNamesInnerBorderId').empty();
+			sTrackNamesDiv.style.display = "block";
+			var sTrackCount = "Track Count: " + sTrackNamesPaths.length;
+			console.log(sTrackCount);
+			var bDivType = 1;
+			for(var i=1; i < (sTrackNamesPaths.length - 1); ++i)
+			{
+				bDivType = !bDivType;
+				sDivType = bDivType ? "musicTrackBorder0" : "musicTrackBorder1";
+				generateTrackName(sTrackNamesPaths[i],sDivType);
 			}
 		}
 		/* ---------------------------------------------------------------------------------------- */
@@ -462,6 +571,7 @@
 		function managePlaybackImage(playerStatus)
 		{
 			var headingElement = document.getElementById('musicImageID');
+			headingElement.name
 			if(playerStatus === "INACTIVE")
 			{
 				if(!hasClass(headingElement, 'PlaybackImage'))
@@ -477,7 +587,28 @@
 				}
 			}
 		}
-
+		
+		function markTrackInPlaylist(sTrackName)
+		{
+				console.log("begining search for marked");
+				$('#trackNamesInnerBorderId').children('div').each(function () 
+				{
+					$(this).children('label').each(function () 
+					{
+						if((this.id === sTrackName) && (this.previousElementSibling.checked === false)) 
+						{
+							console.log("found one to mark");
+							setFocusOnLabel(this.id);
+						}
+						
+						if((this.id !== sTrackName) && (this.previousElementSibling.checked === true)) 
+						{
+							clearFocusOnLabel(this.id);
+						}
+					});
+				});
+		}
+		
 		function setFocusOnLabel(labelId)
 		{
 			var iconToFocus = document.getElementById(labelId);
@@ -487,27 +618,47 @@
 			iconToFocus.previousElementSibling.focus();
 			}
 		}
-
+		
 		function clearFocusOnLabel(labeldId)
 		{
-			//var iconToFocus = document.getElementById('shuffleLabel');
 			var iconToFocus = document.getElementById(labeldId);
 			iconToFocus.previousElementSibling.focus();
 			iconToFocus.previousElementSibling.checked=false;
 		}
-
+		
+		function hidePlaylistDetails()
+		{
+			var sTrackNamesDiv = document.getElementById("trackNamesInnerBorderId");
+			sTrackNamesDiv.style.display = "none";
+		}
+		
+		function isPlaylistCurrentlyDisplayed()
+		{
+			return (document.getElementById("trackNamesInnerBorderId").style.display === "block");
+		}
+		
 		function hasClass(elem,classId)
 		{
 			return ('' + elem.className + '').indexOf('' + classId + '') >-1;
 		}
 		
-
 		function generatePlaylistButton(sPlaylistId)
 		{
-			var sMediaControlsDiv = document.getElementById("MediaControlsId");
+			var sMediaControlsDiv = document.getElementById("mediaControlsInnerBorderId");
 			var sButtonHTML = "<input type=\"radio\" name=\"icons\" id=\"music\"><label class=\"demo new\"><i class=\"icono-music\"></i><div class=\"about\"><button type=\"submit\" name=\"";
 			sButtonHTML += sPlaylistId  + "\" onClick=\"playlistClicked(this.name)\" class=\"btnActions\"></button></div><div class=\"PlaylistId\">Play "  + sPlaylistId  + "</div></label>";
 			sMediaControlsDiv.innerHTML += sButtonHTML;
+		}
+		
+		function generateTrackName(sTrackNamePath,sDivType)
+		{
+			var sTrackNameSplitted = sTrackNamePath.split("/");
+			var uTrackaNameId = sTrackNameSplitted.length - 1;
+
+			var sTrackNamesDiv = document.getElementById("trackNamesInnerBorderId");
+			var sEntryHTML = "<div class=\"" + sDivType + "\" id=\"musicTrackId\"><input type=\"radio\" name=\"icons\"><label class=\"demo2 new\" id=\"" + sTrackNameSplitted[uTrackaNameId]  + "\"><div class=\"about\"><button type=\"submit\" name=\"";
+			sEntryHTML += sTrackNameSplitted[uTrackaNameId]  + "\" onClick=\"trackNameClicked(this.name)\" class=\"btnActions\"></button></div><div class=\"TrackId\">"  + sTrackNameSplitted[uTrackaNameId]  + "</div></label></div>";
+			sTrackNamesDiv.innerHTML += sEntryHTML;
 		}
 		/* ---------------------------------------------------------------------------------------- */
 	</script>

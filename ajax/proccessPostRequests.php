@@ -1,7 +1,8 @@
 <?php 
 	function sendShellCmd($command)
 	{
-		shell_exec("/home/pi/ROUTER/2_OTHER/5_RaspiPlayer/RaspiPlayer.bash $command");
+		$sStdOut = shell_exec("/home/pi/ROUTER/2_OTHER/5_RaspiPlayer/RaspiPlayer.bash $command 2>&1");
+		echo $sStdOut;
 	}
 
 	if (isset($_POST['getVarStatusEvent'])) 
@@ -58,6 +59,13 @@
 		{
 			echo "Error: Track name is invalid";
 		}
+	}
+	
+	if (isset($_POST['trackChangeEvent'])) 
+	{
+		$sNewTrackName=htmlspecialchars($_POST['trackChangeEvent']);
+		$sCommand="changeTrack \"$sNewTrackName\"";
+		sendShellCmd($sCommand);
 	}
 	
 	if (isset($_POST['musicControlEvent'])) 
