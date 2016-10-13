@@ -3,15 +3,24 @@
 	-webkit-filter: grayscale(1);
 	filter: grayscale(90);
 	margin: 0 0 0 0;
+	background: url("/img/RainbowWaveSmall.jpg?ver=004") center center;
+	-webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+	background-repeat: no-repeat;
+	height: 400px;
 }
 
 .MusicBackgorund
 {
-	background-image: url("/img/RainbowWaveSmall.jpg");
-	width:794px;
-	height:384px;
-	text-align: auto;
-	margin-left:174px;
+	background: url("/img/RainbowWaveSmall.jpg?ver=004") center center;
+	-webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+	background-repeat: no-repeat;
+	height: 400px;
 }
 
 #VolumeInfo
@@ -24,7 +33,6 @@
 {
 	text-align:right;
 	font-size:140%;
-	margin-top:330px;
 }
 
 p
@@ -57,9 +65,7 @@ h3
 	margin:0;
 	padding:0;
 	/*height: 400px;*/
-	width: 794px;
 	text-align: auto;
-	margin-left: 174px;
 	padding-bottom: 10px;
 }
 
@@ -75,7 +81,6 @@ h3
 	font-family:Roboto, sans-serif;
 	margin:0;
 	padding:0;
-	width: 794px;
 	text-align: left;
 }
 
@@ -190,7 +195,7 @@ h3
 {
   font-family:'Helvetica Neue';
   float:left;
-  padding-left: 200px;
+  margin-left: 32%;
   margin-top: 17px;
   font-size:20px;
   font-stretch:normal;
@@ -203,7 +208,6 @@ h3
 .DisplayPlaylistInfoButtons
 {
 	float: left;
-	 margin-left:30px;
 }
 
 .DisplayPlaylistInfoButtons label

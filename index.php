@@ -20,7 +20,7 @@
 	<link href="color/default.css" rel="stylesheet">
 
 	<!-- media control icons -->
-	<link rel="stylesheet" href="css/mediaControlStyle2.css">
+	<link rel="stylesheet" href="css/mediaControlStyle.css">
 	<link rel="stylesheet" href="css/icono.css">
 	
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
@@ -148,7 +148,7 @@
 			<div id="musicImageID" class="PlaybackImage">
 				<div class="MusicBackgorund">
 					<div id="VolumeInfo"></div>
-					<div id="TrackInfo"></div>
+					<div id="TrackInfo">_</div>
 				</div>
 			</div>
 			<div class="mediaControls" id="MediaControlsId">
